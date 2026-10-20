@@ -1,4 +1,4 @@
-// Luồng chính chỉ lo nhận sự kiện và phát nhạc; việc vẽ cảnh nằm trong scene.js.
+// Luồng chính lo thiệp chúc mừng, sự kiện và nhạc; việc vẽ cảnh nằm trong scene.js.
 // Ưu tiên chạy scene.js trong Web Worker với OffscreenCanvas, nếu không được thì chạy ngay trên luồng chính.
 let canvas = document.getElementById('scene');
 let send = () => {};
@@ -16,7 +16,10 @@ const hour = parseHour();
 // scene.js báo độ tối viền màn hình theo khung giờ (ban ngày gần như không có viền tối)
 const vignette = document.querySelector('.vignette');
 function onSceneMessage(m) {
-    if (m.type === 'tone' && vignette) vignette.style.opacity = m.vignette;
+    if (m.type !== 'tone') return;
+    if (vignette) vignette.style.opacity = m.vignette;
+    // Nhạc đổi sắc theo ánh sáng của cảnh
+    ChillMusic.setLight(m.light);
 }
 
 const viewport = () => ({
@@ -179,24 +182,185 @@ timeAuto.addEventListener('click', () => {
 setInterval(() => { if (manualHour === null && !timePanel.hidden) refreshClock(); }, 30000);
 refreshClock();
 
-// ---------- Nhạc nền ----------
+// ---------- Thiệp chúc mừng 20/10 ----------
 
-const music = document.getElementById('bg-music');
+// Các lời chúc (sửa hoặc thêm tuỳ ý). Mỗi người xem được chọn ngẫu nhiên một lời và giữ cố định
+// lời đó trên máy của họ; danh sách càng dài thì hai người càng ít khi trùng lời.
+const WISHES = [
+    'Giữa cả một cánh đồng hoa, chẳng bông nào rạng rỡ bằng nụ cười của cậu. Chúc cậu ngày 20/10 thật nhiều niềm vui, luôn xinh đẹp, bình yên và được yêu thương thật nhiều.',
+    'Chúc cậu 20/10 dịu dàng như gió sớm, rực rỡ như nắng trưa và bình yên như ánh trăng đêm nay.',
+    'Mong mỗi ngày của cậu đều nở hoa: có niềm vui để cười, có người thương để nhớ và có thật nhiều điều tốt đẹp ghé qua.',
+    'Chúc cậu luôn là phiên bản hạnh phúc nhất của chính mình, tự do như cánh bướm và tươi tắn như những bông hoa đầu mùa.',
+    'Tặng cậu cả một cánh đồng hoa, một bầu trời đầy sao và một lời chúc thật lòng: mong cậu luôn khoẻ mạnh, vui vẻ và được nâng niu.',
+    'Ngày 20/10 này, chúc cậu bớt đi những âu lo, thêm thật nhiều tiếng cười và luôn tìm thấy bình yên ở bất cứ nơi đâu cậu đến.',
+    'Hoa nở vì có nắng, còn thế giới đẹp hơn vì có cậu. Chúc cậu một ngày 20/10 thật ngọt ngào và trọn vẹn.',
+    'Mong cậu luôn được yêu thương như cách cậu vẫn dịu dàng với mọi người. Chúc cậu 20/10 thật rạng rỡ!',
+    'Chúc cậu những ngày nắng thật ấm, những đêm ngủ thật ngon và một trái tim luôn nhẹ nhàng như gió trên cánh đồng này.',
+    'Cảm ơn cậu vì đã là một bông hoa thật đặc biệt. Chúc cậu 20/10 thật nhiều niềm vui, may mắn và những điều bất ngờ dễ thương.',
+    'Mong nụ cười của cậu luôn nở rộ như cánh đồng hoa này, chẳng cần đợi mùa xuân mới rực rỡ. Chúc cậu 20/10 thật vui!',
+    'Chúc cậu luôn có những buổi sáng trong trẻo, những buổi chiều vàng dịu và những người bạn tốt bên cạnh.',
+    'Như những bông hoa vẫn nghiêng mình theo gió mà chẳng gãy, mong cậu luôn mạnh mẽ và mềm mại theo cách của riêng mình.',
+    'Chúc cậu ngày 20/10 được nâng niu như một đoá hoa, được lắng nghe như một khúc nhạc hay và được yêu thương thật nhiều.',
+    'Mong những điều cậu ấp ủ đều lần lượt nở hoa, những nỗi buồn thì theo gió bay xa. Chúc cậu 20/10 thật bình yên.',
+    'Bầu trời hôm nay đẹp lắm, nhưng vẫn chưa đẹp bằng một ngày cậu thấy thật hạnh phúc. Chúc cậu 20/10 thật trọn vẹn!',
+    'Chúc cậu luôn giữ được ánh mắt lấp lánh như sao trời và trái tim ấm áp như nắng chiều trên cánh đồng hoa.',
+    'Mong cậu đi qua mọi mùa đều thấy hoa nở bên đường, gặp toàn những điều dễ thương và người tử tế. Chúc cậu 20/10 vui vẻ!',
+    'Một ngày thật đẹp dành cho một người thật đẹp. Chúc cậu 20/10 tràn ngập niềm vui, sức khoẻ và những lời yêu thương.',
+    'Chúc cậu được sống chậm lại một chút, ngắm hoa, nghe gió và mỉm cười thật nhiều. Ngày 20/10 thật dịu dàng nhé!'
+];
+
+const card = document.getElementById('card');
+const cardMsg = document.getElementById('card-msg');
+const cardClose = document.getElementById('card-close');
+const cardToggle = document.getElementById('card-toggle');
+const cardSign = card.querySelector('.card-sign');
+// ---------- Tên người xem và lời chúc theo tên ----------
+// Người xem nhập tên một lần; tên được ghi nhớ trên máy nên những lần sau thiệp mở thẳng
+// và không đổi tên được. Lời chúc chọn theo tên: cùng tên luôn ra cùng lời, tên khác nhau
+// phân tán đều ra cả danh sách.
+const NAME_KEY = 'thiep-20-10-ten';
+const gate = document.getElementById('gate');
+const gateForm = document.getElementById('gate-form');
+const gateName = document.getElementById('gate-name');
+const gateWait = document.getElementById('gate-wait');
+const gateWaitText = document.getElementById('gate-wait-text');
+const cardTo = document.getElementById('card-to');
+const WAIT_MS = 1500;
+let viewerName = null, wish = null;
+
+const tidyName = n => n.replace(/\s+/g, ' ').trim().slice(0, 24);
+
+function wishFor(name) {
+    // Băm FNV-1a trên tên đã chuẩn hoá (không phân biệt hoa thường)
+    let h = 2166136261;
+    for (const ch of name.normalize('NFC').toLowerCase()) {
+        h ^= ch.codePointAt(0);
+        h = Math.imul(h, 16777619);
+    }
+    return WISHES[(h >>> 0) % WISHES.length];
+}
+
+function setViewer(name) {
+    viewerName = name;
+    wish = wishFor(name);
+    cardTo.textContent = `Gửi ${name},`;
+}
+
+function savedName() {
+    try { return tidyName(localStorage.getItem(NAME_KEY) || ''); } catch (e) { return ''; }
+}
+
+function showGate() {
+    gate.hidden = false;
+    // Trên máy tính đặt sẵn con trỏ vào ô nhập; trên điện thoại để người xem tự chạm (tránh bàn phím che cảnh)
+    if (matchMedia('(pointer: fine)').matches) setTimeout(() => gateName.focus(), 600);
+}
+
+gate.addEventListener('pointerdown', e => e.stopPropagation());
+
+gateForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = tidyName(gateName.value);
+    if (!name) {
+        gateName.classList.remove('shake');
+        void gateName.offsetWidth;
+        gateName.classList.add('shake');
+        gateName.focus();
+        return;
+    }
+    gateName.blur();
+    setViewer(name);
+    try { localStorage.setItem(NAME_KEY, name); } catch (err) {}
+
+    // "Đang tìm" lời chúc trong chốc lát rồi mở thiệp
+    gateForm.hidden = true;
+    gateWait.hidden = false;
+    gateWaitText.textContent = 'Đang tìm lời chúc dành riêng cho ';
+    const strong = document.createElement('strong');
+    strong.textContent = name;
+    gateWaitText.append(strong, '…');
+    setTimeout(() => {
+        gate.classList.add('closing');
+        setTimeout(() => {
+            gate.hidden = true;
+            gate.classList.remove('closing');
+            openCard();
+        }, 550);
+    }, WAIT_MS);
+});
+
+// Tách lời chúc thành từng chữ để hiện dần
+function showWish(text, delay) {
+    const words = text.split(/\s+/);
+    cardMsg.textContent = '';
+    words.forEach((w, i) => {
+        const span = document.createElement('span');
+        span.className = 'w';
+        span.textContent = w;
+        span.style.animationDelay = `${delay + i * 0.09}s`;
+        cardMsg.append(span, ' ');
+    });
+    cardSign.style.animationDelay = `${delay + 0.4 + words.length * 0.09}s`;
+    // Chạy lại hiệu ứng hiện cho chữ ký
+    cardSign.style.animationName = 'none';
+    void cardSign.offsetWidth;
+    cardSign.style.animationName = '';
+}
+
+function openCard() {
+    card.classList.remove('closing');
+    card.hidden = false;
+    cardToggle.hidden = true;
+    card.style.animationName = 'none';
+    void card.offsetWidth;
+    card.style.animationName = '';
+    showWish(wish, 1.2);
+    // Trái tim bằng đốm sáng và mưa cánh hoa bung ra từ dưới thiệp
+    const r = card.getBoundingClientRect();
+    setTimeout(() => send({ type: 'celebrate', x: r.left + r.width / 2, y: r.bottom + 40 }), 500);
+}
+
+function closeCard() {
+    card.classList.add('closing');
+    setTimeout(() => {
+        card.hidden = true;
+        card.classList.remove('closing');
+        cardToggle.hidden = false;
+    }, 550);
+}
+
+card.addEventListener('pointerdown', e => e.stopPropagation());
+cardClose.addEventListener('click', closeCard);
+cardToggle.addEventListener('click', openCard);
+
+// Sau khi cảnh hiện ra từ bóng tối: đã có tên thì mở thiệp luôn, chưa có thì hỏi tên
+setTimeout(() => {
+    const name = savedName();
+    if (name) {
+        setViewer(name);
+        openCard();
+    } else {
+        showGate();
+    }
+}, 2200);
+
+// ---------- Nhạc chill ----------
+
 const musicBtn = document.getElementById('music-toggle');
 let userMuted = false;
 
+// Trình duyệt chỉ cho phát âm thanh sau lần chạm đầu tiên
 function playMusic() {
-    const p = music.play();
-    if (p) p.then(() => musicBtn.classList.add('playing')).catch(() => {});
+    ChillMusic.start().then(() => musicBtn.classList.add('playing')).catch(() => {});
 }
 
 musicBtn.addEventListener('click', e => {
     e.stopPropagation();
-    if (music.paused) {
+    if (!ChillMusic.playing) {
         userMuted = false;
         playMusic();
     } else {
-        music.pause();
+        ChillMusic.stop();
         userMuted = true;
         musicBtn.classList.remove('playing');
     }
@@ -204,8 +368,13 @@ musicBtn.addEventListener('click', e => {
 
 window.addEventListener('pointerdown', e => {
     if (!timePanel.hidden) setPanel(false);
-    if (!userMuted && music.paused) playMusic();
+    if (!userMuted && !ChillMusic.playing) playMusic();
     send({ type: 'tap', x: e.clientX, y: e.clientY });
 });
 
-playMusic();
+// Lần chạm vào thiệp hay cụm nút cũng tính là lần tương tác đầu tiên để bật nhạc
+for (const el of [card, gate, controls]) {
+    el.addEventListener('pointerdown', () => {
+        if (!userMuted && !ChillMusic.playing) playMusic();
+    });
+}

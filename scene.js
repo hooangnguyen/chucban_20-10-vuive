@@ -124,9 +124,10 @@
     const flowerCache = {};
     // Vẽ sẵn mỗi bông hoa đúng cỡ hiển thị (theo nấc 0.5px) ở độ phân giải thiết bị,
     // để mỗi khung hình chỉ cần xoay rồi in ra, không phải thu nhỏ từ ảnh lớn.
-    function flowerSprite(type, color, size) {
+    // tint: [màu, độ phủ] để nhuộm cả bông (cánh lẫn nhụy) theo ánh sáng của khung giờ
+    function flowerSprite(type, color, size, glowK = 1, tint = null) {
         const sb = Math.max(1.5, Math.round(size * 2) / 2);
-        const key = type + color + sb + '@' + DPR;
+        const key = type + color + sb + '~' + glowK + (tint ? tint[0] + tint[1] : '') + '@' + DPR;
         if (flowerCache[key]) return flowerCache[key];
         const k = (sb / FU) * DPR;
         const w = FU * 3.2 + FPAD * 2, h = FU * 2.4 + FPAD * 2;
@@ -136,8 +137,16 @@
         g.scale(k, k);
         g.translate(ax, ay);
         g.shadowColor = color;
-        g.shadowBlur = 3 * k;
+        g.shadowBlur = 3 * k * glowK;
         DRAW_FLOWER[type](g, color, k);
+        if (tint) {
+            g.setTransform(1, 0, 0, 1, 0, 0);
+            g.globalAlpha = 1;
+            g.shadowBlur = 0;
+            g.globalCompositeOperation = 'source-atop';
+            g.fillStyle = rgba(hex(tint[0]), tint[1]);
+            g.fillRect(0, 0, c.width, c.height);
+        }
         return (flowerCache[key] = { canvas: c, ox: ax * k, oy: ay * k });
     }
 
@@ -306,6 +315,7 @@
         const n = parseInt(h.slice(1), 16);
         return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
     };
+    const toHex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
     const rgba = (c, a) => `rgba(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])}, ${a})`;
 
     function mix(a, b, t) {
@@ -452,7 +462,7 @@
 
     // Báo cho trang chính chỉnh độ tối viền màn hình theo khung giờ
     function notifyTone() {
-        const msg = { type: 'tone', vignette: pal.vignette };
+        const msg = { type: 'tone', vignette: pal.vignette, light: pal.light };
         if (IN_WORKER) global.postMessage(msg);
         else if (global.Scene && global.Scene.onmessage) global.Scene.onmessage(msg);
     }
@@ -1275,7 +1285,7 @@
         for (let i = 0; i < NB; i++) {
             const layer = (i + 0.5) / NB;
             grassBuckets.push({
-                layer, hw: (1.2 + layer * 3) * 0.5, blades: [], tufts: [], flowers: [], sprites: [],
+                layer, hw: (1.8 + layer * 4) * 0.5, blades: [], tufts: [], flowers: [], sprites: [],
                 stem: '', alpha: 0.65 + layer * 0.35
             });
         }
@@ -1304,7 +1314,7 @@
                 });
                 continue;
             }
-            if (Math.random() < 0.15) {
+            if (Math.random() < 0.32) {
                 b.tufts.push({ x, v: Math.floor(Math.random() * TUFT_VARIANTS), stiffness: rand(0.6, 1), sway: rand(0, Math.PI * 2) });
             }
             if (Math.random() < 0.5) {
@@ -1313,13 +1323,13 @@
                 const inZone = Math.random() < 0.6;
                 const [type, colors] = inZone ? zone.type : pickFlowerType();
                 const color = inZone && Math.random() < 0.7 ? zone.color : pick(colors);
-                const size = (layer * 2.6 + rand(2, 5)) * (type === 'lavender' ? 1.2 : type === 'poppy' ? 1.1 : 1);
+                const size = (layer * 2.6 + rand(2, 5)) * 1.2 * (type === 'lavender' ? 1.2 : type === 'poppy' ? 1.1 : 1);
                 b.flowers.push({
-                    x, layer, color, size,
+                    x, layer, type, color, size,
                     h: H * 0.035 + layer * H * 0.11 + Math.random() * H * 0.03,
                     stiffness: rand(0.6, 1),
                     sway: rand(0, Math.PI * 2),
-                    sprite: flowerSprite(type, color, size),
+                    sprite: null,
                     tx: 0, ty: 0
                 });
             }
@@ -1350,6 +1360,18 @@
             }
         }
 
+        // Hoa ở gần cũng chịu ánh sáng của khung giờ: ban đêm ngả về màu trăng xanh trầm và
+        // gần như không phát sáng, để cả cánh đồng có cùng một nguồn sáng.
+        const L = pal.light;
+        const dim = Math.round(0.85 * Math.pow(1 - L, 0.9) * 20) / 20;
+        const glowK = Math.round((0.2 + 0.8 * L) * 4) / 4;
+        // Màu đêm làm tròn theo nấc để không tạo quá nhiều ảnh hoa khác nhau khi màu đổi dần theo giờ
+        const nightTone = toHex(mix(pal.hills[2][0], pal.sky[3], 0.45).map(v => Math.round(v / 8) * 8));
+        const tint = dim > 0 ? [nightTone, dim] : null;
+        for (let i = STATIC_BUCKETS; i < NB; i++) {
+            for (const f of grassBuckets[i].flowers) f.sprite = flowerSprite(f.type, f.color, f.size, glowK, tint);
+        }
+
         for (let i = STATIC_BUCKETS; i < NB; i++) {
             const b = grassBuckets[i];
             b.stem = shade(b.layer, 0, 0.5);
@@ -1363,16 +1385,16 @@
     // Một bụi cỏ: vài lá thon mọc sát nhau, gốc chung ở đáy ảnh. Vẽ sẵn LEAN_FRAMES khung,
     // mỗi khung uốn cong theo một độ nghiêng; ảnh cắt sát các lá để không in phần trong suốt thừa.
     function buildTuft(b, shade) {
-        const nb = Math.floor(rand(2, 5));
-        const spread = 2 + b.layer * 5;
+        const nb = Math.floor(rand(5, 9));
+        const spread = 3 + b.layer * 7;
         const hw0 = b.hw;
         const blades = [];
         for (let j = 0; j < nb; j++) {
             const layer = Math.min(1, Math.max(0, b.layer + rand(-0.06, 0.06)));
             blades.push({
                 dx: gauss() * spread,
-                h: H * 0.02 + layer * H * 0.09 + rng() * H * 0.025,
-                lean: rand(-0.1, 0.1),
+                h: (H * 0.02 + layer * H * 0.09 + rng() * H * 0.025) * rand(0.55, 1),
+                lean: rand(-0.16, 0.16),
                 color: shade(layer, rand(-12, 12), rand(-1, 1.5))
             });
         }
@@ -1773,7 +1795,7 @@
 
             const x = p.x - pointer.x * 1.3;
             const k = p.size / 14;
-            ctx.globalAlpha = p.alpha;
+            ctx.globalAlpha = p.alpha * (0.35 + 0.65 * pal.light);
             // Lật cánh hoa bằng cách co trục y theo cos để trông như đang xoay trong gió
             setTransform(x, p.y, p.rot, k, k * (0.25 + 0.75 * Math.abs(Math.cos(p.flip))));
             ctx.drawImage(p.sprite, -16, -11, 32, 22);
@@ -2128,6 +2150,29 @@
 
     // ---------- Tương tác ----------
 
+    // Mở thiệp: trái tim bằng đốm sáng nở ra rồi tan, kèm mưa cánh hoa
+    function celebrate(x, y) {
+        const s = Math.min(W, H) * 0.012;
+        for (let i = 0; i < 90; i++) {
+            const t = (i / 90) * Math.PI * 2;
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            addParticle({
+                x, y, color: pick(['#ffd6e4', '#ffb3c8', '#ffffff', '#ffe3a8']), size: rand(1.2, 2.6),
+                vx: hx * s * 0.055, vy: hy * s * 0.055, life: 1.8, decay: rand(0.008, 0.012), burst: true
+            });
+        }
+        rings.push({ x, y, r: 6, max: Math.min(W, H) * 0.25, life: 1, color: '#ffd6e4' });
+        for (let i = 0; i < 28; i++) {
+            const p = newPetal(true);
+            p.x = rand(0, W);
+            p.y = rand(-H * 0.3, -10);
+            p.vy = rand(0.6, 1.4);
+            petals.push(p);
+        }
+        if (petals.length > 70) petals.splice(0, petals.length - 70);
+    }
+
     function burst(x, y) {
         for (let i = 0; i < 36; i++) {
             const a = Math.random() * Math.PI * 2;
@@ -2187,6 +2232,9 @@
             case 'pointer':
                 pointer.tx = m.x * PARALLAX;
                 pointer.ty = m.y * PARALLAX * 0.5;
+                break;
+            case 'celebrate':
+                celebrate(m.x, m.y);
                 break;
             case 'tap':
                 burst(m.x, m.y);
