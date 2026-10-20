@@ -304,6 +304,34 @@ body {
     color: #fff;
 }
 
+/* Nút đổi lời chúc: góc trên bên trái, đối xứng với nút đóng */
+.card-next {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, transform 0.5s;
+}
+
+.card-next:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.card-next:active {
+    transform: rotate(180deg);
+}
+
+.card-next svg,
 .card-close svg {
     width: 16px;
     height: 16px;
@@ -381,6 +409,11 @@ body {
     .card-close {
         top: 8px;
         right: 8px;
+    }
+
+    .card-next {
+        top: 8px;
+        left: 8px;
     }
 
     .card-date {

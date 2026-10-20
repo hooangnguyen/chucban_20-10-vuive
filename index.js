@@ -184,34 +184,63 @@ refreshClock();
 
 // ---------- Thiệp chúc mừng 20/10 ----------
 
+// Các lời chúc: mỗi lần mở thiệp chọn ngẫu nhiên một lời (sửa hoặc thêm tuỳ ý)
+const WISHES = [
+    'Giữa cả một cánh đồng hoa, chẳng bông nào rạng rỡ bằng nụ cười của cậu. Chúc cậu ngày 20/10 thật nhiều niềm vui, luôn xinh đẹp, bình yên và được yêu thương thật nhiều.',
+    'Chúc cậu 20/10 dịu dàng như gió sớm, rực rỡ như nắng trưa và bình yên như ánh trăng đêm nay.',
+    'Mong mỗi ngày của cậu đều nở hoa: có niềm vui để cười, có người thương để nhớ và có thật nhiều điều tốt đẹp ghé qua.',
+    'Chúc cậu luôn là phiên bản hạnh phúc nhất của chính mình, tự do như cánh bướm và tươi tắn như những bông hoa đầu mùa.',
+    'Tặng cậu cả một cánh đồng hoa, một bầu trời đầy sao và một lời chúc thật lòng: mong cậu luôn khoẻ mạnh, vui vẻ và được nâng niu.',
+    'Ngày 20/10 này, chúc cậu bớt đi những âu lo, thêm thật nhiều tiếng cười và luôn tìm thấy bình yên ở bất cứ nơi đâu cậu đến.',
+    'Hoa nở vì có nắng, còn thế giới đẹp hơn vì có cậu. Chúc cậu một ngày 20/10 thật ngọt ngào và trọn vẹn.',
+    'Mong cậu luôn được yêu thương như cách cậu vẫn dịu dàng với mọi người. Chúc cậu 20/10 thật rạng rỡ!',
+    'Chúc cậu những ngày nắng thật ấm, những đêm ngủ thật ngon và một trái tim luôn nhẹ nhàng như gió trên cánh đồng này.',
+    'Cảm ơn cậu vì đã là một bông hoa thật đặc biệt. Chúc cậu 20/10 thật nhiều niềm vui, may mắn và những điều bất ngờ dễ thương.'
+];
+
 const card = document.getElementById('card');
 const cardMsg = document.getElementById('card-msg');
 const cardClose = document.getElementById('card-close');
+const cardNext = document.getElementById('card-next');
 const cardToggle = document.getElementById('card-toggle');
 const cardSign = card.querySelector('.card-sign');
+let wishIndex = -1;
+
+// Chọn ngẫu nhiên một lời chúc khác với lời vừa hiện
+function pickWish() {
+    let i;
+    do i = Math.floor(Math.random() * WISHES.length);
+    while (WISHES.length > 1 && i === wishIndex);
+    wishIndex = i;
+    return WISHES[i];
+}
 
 // Tách lời chúc thành từng chữ để hiện dần
-const words = cardMsg.textContent.trim().split(/\s+/);
-cardMsg.textContent = '';
-words.forEach((w, i) => {
-    const span = document.createElement('span');
-    span.className = 'w';
-    span.textContent = w;
-    span.style.animationDelay = `${1.2 + i * 0.09}s`;
-    cardMsg.append(span, ' ');
-});
-cardSign.style.animationDelay = `${1.6 + words.length * 0.09}s`;
+function showWish(text, delay) {
+    const words = text.split(/\s+/);
+    cardMsg.textContent = '';
+    words.forEach((w, i) => {
+        const span = document.createElement('span');
+        span.className = 'w';
+        span.textContent = w;
+        span.style.animationDelay = `${delay + i * 0.09}s`;
+        cardMsg.append(span, ' ');
+    });
+    cardSign.style.animationDelay = `${delay + 0.4 + words.length * 0.09}s`;
+    // Chạy lại hiệu ứng hiện cho chữ ký
+    cardSign.style.animationName = 'none';
+    void cardSign.offsetWidth;
+    cardSign.style.animationName = '';
+}
 
 function openCard() {
     card.classList.remove('closing');
     card.hidden = false;
     cardToggle.hidden = true;
-    // Chạy lại hiệu ứng hiện chữ mỗi lần mở
-    for (const el of [card, ...cardMsg.children, cardSign]) {
-        el.style.animationName = 'none';
-        void el.offsetWidth;
-        el.style.animationName = '';
-    }
+    card.style.animationName = 'none';
+    void card.offsetWidth;
+    card.style.animationName = '';
+    showWish(pickWish(), 1.2);
     // Trái tim bằng đốm sáng và mưa cánh hoa bung ra từ dưới thiệp
     const r = card.getBoundingClientRect();
     setTimeout(() => send({ type: 'celebrate', x: r.left + r.width / 2, y: r.bottom + 40 }), 500);
@@ -229,6 +258,7 @@ function closeCard() {
 card.addEventListener('pointerdown', e => e.stopPropagation());
 cardClose.addEventListener('click', closeCard);
 cardToggle.addEventListener('click', openCard);
+cardNext.addEventListener('click', () => showWish(pickWish(), 0));
 
 // Thiệp mở sau khi cảnh hiện ra từ bóng tối
 setTimeout(openCard, 2200);

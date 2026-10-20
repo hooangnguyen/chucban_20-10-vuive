@@ -26,9 +26,17 @@
         <div class="card-date">20 <span>·</span> 10</div>
         <div class="card-sub">Chúc mừng ngày Phụ nữ Việt Nam</div>
         <div class="card-to">Gửi cậu,</div>
-        <p class="card-msg" id="card-msg">Giữa cả một cánh đồng hoa, chẳng bông nào rạng rỡ bằng nụ cười của cậu.
-            Chúc cậu ngày 20/10 thật nhiều niềm vui, luôn xinh đẹp, bình yên và được yêu thương thật nhiều.</p>
+        <!-- Lời chúc được chọn ngẫu nhiên trong index.js (danh sách WISHES) -->
+        <p class="card-msg" id="card-msg"></p>
         <div class="card-sign">♡</div>
+        <button class="card-next" id="card-next" aria-label="Đổi lời chúc khác" title="Đổi lời chúc khác">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" />
+                <path d="M3 21v-5h5" />
+            </svg>
+        </button>
     </section>
 
     <div class="controls" id="controls">
