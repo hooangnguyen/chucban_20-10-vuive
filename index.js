@@ -214,21 +214,80 @@ const cardMsg = document.getElementById('card-msg');
 const cardClose = document.getElementById('card-close');
 const cardToggle = document.getElementById('card-toggle');
 const cardSign = card.querySelector('.card-sign');
-// Lời chúc của người xem này: chọn ngẫu nhiên một lần rồi ghi nhớ trên máy, nên tải lại trang
-// hay mở lại thiệp vẫn là lời đó (trình duyệt chặn lưu trữ thì vẫn chọn ngẫu nhiên mỗi lần vào)
-const WISH_KEY = 'thiep-20-10-loi-chuc';
-function viewerWish() {
-    let i = NaN;
-    try { i = parseInt(localStorage.getItem(WISH_KEY), 10); } catch (e) {}
-    if (!(i >= 0 && i < WISHES.length)) {
-        const r = new Uint32Array(1);
-        (self.crypto && crypto.getRandomValues) ? crypto.getRandomValues(r) : (r[0] = Math.random() * 4294967296);
-        i = r[0] % WISHES.length;
-        try { localStorage.setItem(WISH_KEY, String(i)); } catch (e) {}
+// ---------- Tên người xem và lời chúc theo tên ----------
+// Người xem nhập tên một lần; tên được ghi nhớ trên máy nên những lần sau thiệp mở thẳng
+// và không đổi tên được. Lời chúc chọn theo tên: cùng tên luôn ra cùng lời, tên khác nhau
+// phân tán đều ra cả danh sách.
+const NAME_KEY = 'thiep-20-10-ten';
+const gate = document.getElementById('gate');
+const gateForm = document.getElementById('gate-form');
+const gateName = document.getElementById('gate-name');
+const gateWait = document.getElementById('gate-wait');
+const gateWaitText = document.getElementById('gate-wait-text');
+const cardTo = document.getElementById('card-to');
+const WAIT_MS = 1500;
+let viewerName = null, wish = null;
+
+const tidyName = n => n.replace(/\s+/g, ' ').trim().slice(0, 24);
+
+function wishFor(name) {
+    // Băm FNV-1a trên tên đã chuẩn hoá (không phân biệt hoa thường)
+    let h = 2166136261;
+    for (const ch of name.normalize('NFC').toLowerCase()) {
+        h ^= ch.codePointAt(0);
+        h = Math.imul(h, 16777619);
     }
-    return WISHES[i];
+    return WISHES[(h >>> 0) % WISHES.length];
 }
-const wish = viewerWish();
+
+function setViewer(name) {
+    viewerName = name;
+    wish = wishFor(name);
+    cardTo.textContent = `Gửi ${name},`;
+}
+
+function savedName() {
+    try { return tidyName(localStorage.getItem(NAME_KEY) || ''); } catch (e) { return ''; }
+}
+
+function showGate() {
+    gate.hidden = false;
+    // Trên máy tính đặt sẵn con trỏ vào ô nhập; trên điện thoại để người xem tự chạm (tránh bàn phím che cảnh)
+    if (matchMedia('(pointer: fine)').matches) setTimeout(() => gateName.focus(), 600);
+}
+
+gate.addEventListener('pointerdown', e => e.stopPropagation());
+
+gateForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = tidyName(gateName.value);
+    if (!name) {
+        gateName.classList.remove('shake');
+        void gateName.offsetWidth;
+        gateName.classList.add('shake');
+        gateName.focus();
+        return;
+    }
+    gateName.blur();
+    setViewer(name);
+    try { localStorage.setItem(NAME_KEY, name); } catch (err) {}
+
+    // "Đang tìm" lời chúc trong chốc lát rồi mở thiệp
+    gateForm.hidden = true;
+    gateWait.hidden = false;
+    gateWaitText.textContent = 'Đang tìm lời chúc dành riêng cho ';
+    const strong = document.createElement('strong');
+    strong.textContent = name;
+    gateWaitText.append(strong, '…');
+    setTimeout(() => {
+        gate.classList.add('closing');
+        setTimeout(() => {
+            gate.hidden = true;
+            gate.classList.remove('closing');
+            openCard();
+        }, 550);
+    }, WAIT_MS);
+});
 
 // Tách lời chúc thành từng chữ để hiện dần
 function showWish(text, delay) {
@@ -274,8 +333,16 @@ card.addEventListener('pointerdown', e => e.stopPropagation());
 cardClose.addEventListener('click', closeCard);
 cardToggle.addEventListener('click', openCard);
 
-// Thiệp mở sau khi cảnh hiện ra từ bóng tối
-setTimeout(openCard, 2200);
+// Sau khi cảnh hiện ra từ bóng tối: đã có tên thì mở thiệp luôn, chưa có thì hỏi tên
+setTimeout(() => {
+    const name = savedName();
+    if (name) {
+        setViewer(name);
+        openCard();
+    } else {
+        showGate();
+    }
+}, 2200);
 
 // ---------- Nhạc chill ----------
 
@@ -306,7 +373,7 @@ window.addEventListener('pointerdown', e => {
 });
 
 // Lần chạm vào thiệp hay cụm nút cũng tính là lần tương tác đầu tiên để bật nhạc
-for (const el of [card, controls]) {
+for (const el of [card, gate, controls]) {
     el.addEventListener('pointerdown', () => {
         if (!userMuted && !ChillMusic.playing) playMusic();
     });

@@ -434,6 +434,154 @@ body {
     to { opacity: 0; transform: translate(-50%, -16px) scale(0.97); filter: blur(4px); }
 }
 
+/* ---------- Hỏi tên trước khi mở thiệp ---------- */
+.gate {
+    width: min(400px, calc(100vw - 40px));
+}
+
+.gate-form,
+.gate-wait {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gate-wait[hidden],
+.gate-form[hidden] {
+    display: none;
+}
+
+.gate-label {
+    margin-top: 18px;
+    font: italic 500 19px/1.4 "Cormorant Garamond", Georgia, serif;
+}
+
+.gate-input {
+    width: 100%;
+    max-width: 280px;
+    box-sizing: border-box;
+    margin-top: 12px;
+    padding: 11px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font: 600 22px/1.2 "Dancing Script", cursive;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.gate-input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.gate-input:focus {
+    border-color: rgba(255, 200, 220, 0.75);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 4px rgba(255, 180, 210, 0.15);
+}
+
+.gate-input.shake {
+    animation: shake 0.4s;
+}
+
+@keyframes shake {
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
+}
+
+.gate-btn {
+    margin-top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #ff9ec4, #ffc3a0);
+    color: #3a1530;
+    font: 600 17px/1 "Cormorant Garamond", Georgia, serif;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255, 140, 180, 0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gate-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255, 140, 180, 0.5);
+}
+
+.gate-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+}
+
+/* Bông hoa xoay trong lúc "tìm" lời chúc */
+.gate-wait {
+    padding: 14px 0 6px;
+}
+
+.gate-flower {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    animation: spin 1.4s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+}
+
+.gate-flower i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 28px;
+    margin: -28px 0 0 -8px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: linear-gradient(#ffd6e4, #ff9ec4);
+    transform-origin: 50% 100%;
+    box-shadow: 0 0 10px rgba(255, 170, 200, 0.6);
+}
+
+.gate-flower i:nth-child(2) { transform: rotate(60deg); }
+.gate-flower i:nth-child(3) { transform: rotate(120deg); }
+.gate-flower i:nth-child(4) { transform: rotate(180deg); }
+.gate-flower i:nth-child(5) { transform: rotate(240deg); }
+.gate-flower i:nth-child(6) { transform: rotate(300deg); }
+
+.gate-flower b {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border-radius: 50%;
+    background: radial-gradient(#fff2a0, #ffc93a);
+    box-shadow: 0 0 12px #ffd36b;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.gate-wait-text {
+    margin-top: 16px;
+    font: italic 500 19px/1.45 "Cormorant Garamond", Georgia, serif;
+    animation: breathe 1.4s ease-in-out infinite;
+}
+
+.gate-wait-text strong {
+    font: 600 24px/1 "Dancing Script", cursive;
+    color: #ffe3ec;
+}
+
+@keyframes breathe {
+    50% { opacity: 0.6; }
+}
+
 #card-toggle {
     color: #ffc2d6;
 }

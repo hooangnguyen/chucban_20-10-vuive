@@ -18,6 +18,27 @@
     <div class="vignette"></div>
     <div class="fade-in"></div>
 
+    <!-- Hỏi tên người xem trước khi mở thiệp -->
+    <section class="card gate" id="gate" hidden aria-label="Nhập tên để mở thiệp">
+        <form class="gate-form" id="gate-form" autocomplete="off">
+            <div class="card-date">20 <span>·</span> 10</div>
+            <div class="card-sub">Có một tấm thiệp đang chờ cậu</div>
+            <label class="gate-label" for="gate-name">Cho mình biết tên cậu nhé</label>
+            <input class="gate-input" id="gate-name" type="text" maxlength="24" placeholder="Tên của cậu"
+                enterkeyhint="go" autocapitalize="words" spellcheck="false">
+            <button class="gate-btn" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+                </svg>
+                Mở thiệp
+            </button>
+        </form>
+        <div class="gate-wait" id="gate-wait" hidden aria-live="polite">
+            <div class="gate-flower" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+            <div class="gate-wait-text" id="gate-wait-text"></div>
+        </div>
+    </section>
+
     <!-- Thiệp chúc mừng 20/10 -->
     <section class="card" id="card" hidden aria-label="Thiệp chúc mừng 20/10">
         <button class="card-close" id="card-close" aria-label="Đóng thiệp">
@@ -25,8 +46,8 @@
         </button>
         <div class="card-date">20 <span>·</span> 10</div>
         <div class="card-sub">Chúc mừng ngày Phụ nữ Việt Nam</div>
-        <div class="card-to">Gửi cậu,</div>
-        <!-- Lời chúc lấy ngẫu nhiên theo từng người xem trong index.js (danh sách WISHES) -->
+        <div class="card-to" id="card-to">Gửi cậu,</div>
+        <!-- Lời chúc được chọn theo tên người xem trong index.js (danh sách WISHES) -->
         <p class="card-msg" id="card-msg"></p>
         <div class="card-sign">♡</div>
     </section>
