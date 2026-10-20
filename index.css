@@ -246,12 +246,13 @@ body {
 /* ---------- Thiệp chúc mừng 20/10 ---------- */
 .card {
     position: fixed;
+    /* Tâm thiệp nằm khoảng 30% chiều cao màn hình: giữa mép trên và dãy núi */
     left: 50%;
-    top: clamp(20px, 8vh, 84px);
+    top: 30vh;
     width: min(520px, calc(100vw - 32px));
     box-sizing: border-box;
     padding: 26px 28px 22px;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     text-align: center;
     color: #fff;
     border-radius: 26px;
@@ -274,11 +275,11 @@ body {
 }
 
 @keyframes cardIn {
-    from { opacity: 0; transform: translate(-50%, 24px) scale(0.96); filter: blur(6px); }
+    from { opacity: 0; transform: translate(-50%, calc(-50% + 24px)) scale(0.96); filter: blur(6px); }
 }
 
 @keyframes cardOut {
-    to { opacity: 0; transform: translate(-50%, -16px) scale(0.97); filter: blur(4px); }
+    to { opacity: 0; transform: translate(-50%, calc(-50% - 16px)) scale(0.97); filter: blur(4px); }
 }
 
 .card-close {
@@ -367,6 +368,67 @@ body {
     color: #ffb3c8;
     opacity: 0;
     animation: wordIn 1s ease-out forwards;
+}
+
+/* Điện thoại (dọc hoặc xoay ngang): thiệp gọn hơn để không chiếm quá nhiều chiều cao */
+@media (max-width: 480px), (max-height: 560px) {
+    .card {
+        width: min(460px, calc(100vw - 40px));
+        padding: 18px 20px 14px;
+        border-radius: 22px;
+    }
+
+    .card-close {
+        top: 8px;
+        right: 8px;
+    }
+
+    .card-date {
+        font-size: 38px;
+    }
+
+    .card-sub {
+        margin-top: 6px;
+        font-size: 10.5px;
+        letter-spacing: 2px;
+    }
+
+    .card-to {
+        margin-top: 10px;
+        font-size: 25px;
+    }
+
+    .card-msg {
+        margin-top: 6px;
+        font-size: 15.5px;
+        line-height: 1.45;
+    }
+
+    .card-sign {
+        margin-top: 6px;
+        font-size: 16px;
+    }
+}
+
+/* Màn hình thấp (điện thoại xoay ngang): bám mép trên để không tràn */
+@media (max-height: 560px) {
+    .card {
+        top: 12px;
+        transform: translateX(-50%);
+        animation-name: cardInTop;
+    }
+
+    .card.closing {
+        animation-name: cardOutTop;
+    }
+}
+
+@keyframes cardInTop {
+    from { opacity: 0; transform: translate(-50%, 24px) scale(0.96); filter: blur(6px); }
+}
+
+@keyframes cardOutTop {
+    to { opacity: 0; transform: translate(-50%, -16px) scale(0.97); filter: blur(4px); }
 }
 
 #card-toggle {
