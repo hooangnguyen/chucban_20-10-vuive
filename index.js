@@ -184,7 +184,8 @@ refreshClock();
 
 // ---------- Thiệp chúc mừng 20/10 ----------
 
-// Các lời chúc: mỗi lần mở thiệp chọn ngẫu nhiên một lời (sửa hoặc thêm tuỳ ý)
+// Các lời chúc (sửa hoặc thêm tuỳ ý). Mỗi người xem được chọn ngẫu nhiên một lời và giữ cố định
+// lời đó trên máy của họ; danh sách càng dài thì hai người càng ít khi trùng lời.
 const WISHES = [
     'Giữa cả một cánh đồng hoa, chẳng bông nào rạng rỡ bằng nụ cười của cậu. Chúc cậu ngày 20/10 thật nhiều niềm vui, luôn xinh đẹp, bình yên và được yêu thương thật nhiều.',
     'Chúc cậu 20/10 dịu dàng như gió sớm, rực rỡ như nắng trưa và bình yên như ánh trăng đêm nay.',
@@ -195,25 +196,39 @@ const WISHES = [
     'Hoa nở vì có nắng, còn thế giới đẹp hơn vì có cậu. Chúc cậu một ngày 20/10 thật ngọt ngào và trọn vẹn.',
     'Mong cậu luôn được yêu thương như cách cậu vẫn dịu dàng với mọi người. Chúc cậu 20/10 thật rạng rỡ!',
     'Chúc cậu những ngày nắng thật ấm, những đêm ngủ thật ngon và một trái tim luôn nhẹ nhàng như gió trên cánh đồng này.',
-    'Cảm ơn cậu vì đã là một bông hoa thật đặc biệt. Chúc cậu 20/10 thật nhiều niềm vui, may mắn và những điều bất ngờ dễ thương.'
+    'Cảm ơn cậu vì đã là một bông hoa thật đặc biệt. Chúc cậu 20/10 thật nhiều niềm vui, may mắn và những điều bất ngờ dễ thương.',
+    'Mong nụ cười của cậu luôn nở rộ như cánh đồng hoa này, chẳng cần đợi mùa xuân mới rực rỡ. Chúc cậu 20/10 thật vui!',
+    'Chúc cậu luôn có những buổi sáng trong trẻo, những buổi chiều vàng dịu và những người bạn tốt bên cạnh.',
+    'Như những bông hoa vẫn nghiêng mình theo gió mà chẳng gãy, mong cậu luôn mạnh mẽ và mềm mại theo cách của riêng mình.',
+    'Chúc cậu ngày 20/10 được nâng niu như một đoá hoa, được lắng nghe như một khúc nhạc hay và được yêu thương thật nhiều.',
+    'Mong những điều cậu ấp ủ đều lần lượt nở hoa, những nỗi buồn thì theo gió bay xa. Chúc cậu 20/10 thật bình yên.',
+    'Bầu trời hôm nay đẹp lắm, nhưng vẫn chưa đẹp bằng một ngày cậu thấy thật hạnh phúc. Chúc cậu 20/10 thật trọn vẹn!',
+    'Chúc cậu luôn giữ được ánh mắt lấp lánh như sao trời và trái tim ấm áp như nắng chiều trên cánh đồng hoa.',
+    'Mong cậu đi qua mọi mùa đều thấy hoa nở bên đường, gặp toàn những điều dễ thương và người tử tế. Chúc cậu 20/10 vui vẻ!',
+    'Một ngày thật đẹp dành cho một người thật đẹp. Chúc cậu 20/10 tràn ngập niềm vui, sức khoẻ và những lời yêu thương.',
+    'Chúc cậu được sống chậm lại một chút, ngắm hoa, nghe gió và mỉm cười thật nhiều. Ngày 20/10 thật dịu dàng nhé!'
 ];
 
 const card = document.getElementById('card');
 const cardMsg = document.getElementById('card-msg');
 const cardClose = document.getElementById('card-close');
-const cardNext = document.getElementById('card-next');
 const cardToggle = document.getElementById('card-toggle');
 const cardSign = card.querySelector('.card-sign');
-let wishIndex = -1;
-
-// Chọn ngẫu nhiên một lời chúc khác với lời vừa hiện
-function pickWish() {
-    let i;
-    do i = Math.floor(Math.random() * WISHES.length);
-    while (WISHES.length > 1 && i === wishIndex);
-    wishIndex = i;
+// Lời chúc của người xem này: chọn ngẫu nhiên một lần rồi ghi nhớ trên máy, nên tải lại trang
+// hay mở lại thiệp vẫn là lời đó (trình duyệt chặn lưu trữ thì vẫn chọn ngẫu nhiên mỗi lần vào)
+const WISH_KEY = 'thiep-20-10-loi-chuc';
+function viewerWish() {
+    let i = NaN;
+    try { i = parseInt(localStorage.getItem(WISH_KEY), 10); } catch (e) {}
+    if (!(i >= 0 && i < WISHES.length)) {
+        const r = new Uint32Array(1);
+        (self.crypto && crypto.getRandomValues) ? crypto.getRandomValues(r) : (r[0] = Math.random() * 4294967296);
+        i = r[0] % WISHES.length;
+        try { localStorage.setItem(WISH_KEY, String(i)); } catch (e) {}
+    }
     return WISHES[i];
 }
+const wish = viewerWish();
 
 // Tách lời chúc thành từng chữ để hiện dần
 function showWish(text, delay) {
@@ -240,7 +255,7 @@ function openCard() {
     card.style.animationName = 'none';
     void card.offsetWidth;
     card.style.animationName = '';
-    showWish(pickWish(), 1.2);
+    showWish(wish, 1.2);
     // Trái tim bằng đốm sáng và mưa cánh hoa bung ra từ dưới thiệp
     const r = card.getBoundingClientRect();
     setTimeout(() => send({ type: 'celebrate', x: r.left + r.width / 2, y: r.bottom + 40 }), 500);
@@ -258,7 +273,6 @@ function closeCard() {
 card.addEventListener('pointerdown', e => e.stopPropagation());
 cardClose.addEventListener('click', closeCard);
 cardToggle.addEventListener('click', openCard);
-cardNext.addEventListener('click', () => showWish(pickWish(), 0));
 
 // Thiệp mở sau khi cảnh hiện ra từ bóng tối
 setTimeout(openCard, 2200);
