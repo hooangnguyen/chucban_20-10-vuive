@@ -462,7 +462,7 @@
 
     // Báo cho trang chính chỉnh độ tối viền màn hình theo khung giờ
     function notifyTone() {
-        const msg = { type: 'tone', vignette: pal.vignette };
+        const msg = { type: 'tone', vignette: pal.vignette, light: pal.light };
         if (IN_WORKER) global.postMessage(msg);
         else if (global.Scene && global.Scene.onmessage) global.Scene.onmessage(msg);
     }
@@ -2150,6 +2150,29 @@
 
     // ---------- Tương tác ----------
 
+    // Mở thiệp: trái tim bằng đốm sáng nở ra rồi tan, kèm mưa cánh hoa
+    function celebrate(x, y) {
+        const s = Math.min(W, H) * 0.012;
+        for (let i = 0; i < 90; i++) {
+            const t = (i / 90) * Math.PI * 2;
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            addParticle({
+                x, y, color: pick(['#ffd6e4', '#ffb3c8', '#ffffff', '#ffe3a8']), size: rand(1.2, 2.6),
+                vx: hx * s * 0.055, vy: hy * s * 0.055, life: 1.8, decay: rand(0.008, 0.012), burst: true
+            });
+        }
+        rings.push({ x, y, r: 6, max: Math.min(W, H) * 0.25, life: 1, color: '#ffd6e4' });
+        for (let i = 0; i < 28; i++) {
+            const p = newPetal(true);
+            p.x = rand(0, W);
+            p.y = rand(-H * 0.3, -10);
+            p.vy = rand(0.6, 1.4);
+            petals.push(p);
+        }
+        if (petals.length > 70) petals.splice(0, petals.length - 70);
+    }
+
     function burst(x, y) {
         for (let i = 0; i < 36; i++) {
             const a = Math.random() * Math.PI * 2;
@@ -2209,6 +2232,9 @@
             case 'pointer':
                 pointer.tx = m.x * PARALLAX;
                 pointer.ty = m.y * PARALLAX * 0.5;
+                break;
+            case 'celebrate':
+                celebrate(m.x, m.y);
                 break;
             case 'tap':
                 burst(m.x, m.y);

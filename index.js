@@ -1,4 +1,4 @@
-// Luồng chính chỉ lo nhận sự kiện và phát nhạc; việc vẽ cảnh nằm trong scene.js.
+// Luồng chính lo thiệp chúc mừng, sự kiện và nhạc; việc vẽ cảnh nằm trong scene.js.
 // Ưu tiên chạy scene.js trong Web Worker với OffscreenCanvas, nếu không được thì chạy ngay trên luồng chính.
 let canvas = document.getElementById('scene');
 let send = () => {};
@@ -16,7 +16,10 @@ const hour = parseHour();
 // scene.js báo độ tối viền màn hình theo khung giờ (ban ngày gần như không có viền tối)
 const vignette = document.querySelector('.vignette');
 function onSceneMessage(m) {
-    if (m.type === 'tone' && vignette) vignette.style.opacity = m.vignette;
+    if (m.type !== 'tone') return;
+    if (vignette) vignette.style.opacity = m.vignette;
+    // Nhạc đổi sắc theo ánh sáng của cảnh
+    ChillMusic.setLight(m.light);
 }
 
 const viewport = () => ({
@@ -179,24 +182,74 @@ timeAuto.addEventListener('click', () => {
 setInterval(() => { if (manualHour === null && !timePanel.hidden) refreshClock(); }, 30000);
 refreshClock();
 
-// ---------- Nhạc nền ----------
+// ---------- Thiệp chúc mừng 20/10 ----------
 
-const music = document.getElementById('bg-music');
+const card = document.getElementById('card');
+const cardMsg = document.getElementById('card-msg');
+const cardClose = document.getElementById('card-close');
+const cardToggle = document.getElementById('card-toggle');
+const cardSign = card.querySelector('.card-sign');
+
+// Tách lời chúc thành từng chữ để hiện dần
+const words = cardMsg.textContent.trim().split(/\s+/);
+cardMsg.textContent = '';
+words.forEach((w, i) => {
+    const span = document.createElement('span');
+    span.className = 'w';
+    span.textContent = w;
+    span.style.animationDelay = `${1.2 + i * 0.09}s`;
+    cardMsg.append(span, ' ');
+});
+cardSign.style.animationDelay = `${1.6 + words.length * 0.09}s`;
+
+function openCard() {
+    card.classList.remove('closing');
+    card.hidden = false;
+    cardToggle.hidden = true;
+    // Chạy lại hiệu ứng hiện chữ mỗi lần mở
+    for (const el of [card, ...cardMsg.children, cardSign]) {
+        el.style.animationName = 'none';
+        void el.offsetWidth;
+        el.style.animationName = '';
+    }
+    // Trái tim bằng đốm sáng và mưa cánh hoa bung ra từ dưới thiệp
+    const r = card.getBoundingClientRect();
+    setTimeout(() => send({ type: 'celebrate', x: r.left + r.width / 2, y: r.bottom + 40 }), 500);
+}
+
+function closeCard() {
+    card.classList.add('closing');
+    setTimeout(() => {
+        card.hidden = true;
+        card.classList.remove('closing');
+        cardToggle.hidden = false;
+    }, 550);
+}
+
+card.addEventListener('pointerdown', e => e.stopPropagation());
+cardClose.addEventListener('click', closeCard);
+cardToggle.addEventListener('click', openCard);
+
+// Thiệp mở sau khi cảnh hiện ra từ bóng tối
+setTimeout(openCard, 2200);
+
+// ---------- Nhạc chill ----------
+
 const musicBtn = document.getElementById('music-toggle');
 let userMuted = false;
 
+// Trình duyệt chỉ cho phát âm thanh sau lần chạm đầu tiên
 function playMusic() {
-    const p = music.play();
-    if (p) p.then(() => musicBtn.classList.add('playing')).catch(() => {});
+    ChillMusic.start().then(() => musicBtn.classList.add('playing')).catch(() => {});
 }
 
 musicBtn.addEventListener('click', e => {
     e.stopPropagation();
-    if (music.paused) {
+    if (!ChillMusic.playing) {
         userMuted = false;
         playMusic();
     } else {
-        music.pause();
+        ChillMusic.stop();
         userMuted = true;
         musicBtn.classList.remove('playing');
     }
@@ -204,8 +257,13 @@ musicBtn.addEventListener('click', e => {
 
 window.addEventListener('pointerdown', e => {
     if (!timePanel.hidden) setPanel(false);
-    if (!userMuted && music.paused) playMusic();
+    if (!userMuted && !ChillMusic.playing) playMusic();
     send({ type: 'tap', x: e.clientX, y: e.clientY });
 });
 
-playMusic();
+// Lần chạm vào thiệp hay cụm nút cũng tính là lần tương tác đầu tiên để bật nhạc
+for (const el of [card, controls]) {
+    el.addEventListener('pointerdown', () => {
+        if (!userMuted && !ChillMusic.playing) playMusic();
+    });
+}

@@ -242,3 +242,144 @@ body {
     0%, 100% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 190, 210, 0.25); }
     50% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 8px rgba(255, 190, 210, 0); }
 }
+
+/* ---------- Thiệp chúc mừng 20/10 ---------- */
+.card {
+    position: fixed;
+    left: 50%;
+    top: clamp(20px, 8vh, 84px);
+    width: min(520px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 26px 28px 22px;
+    transform: translateX(-50%);
+    text-align: center;
+    color: #fff;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: linear-gradient(160deg, rgba(40, 30, 70, 0.32), rgba(20, 24, 48, 0.22));
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 18px 50px rgba(10, 8, 30, 0.35), inset 0 0 30px rgba(255, 255, 255, 0.06);
+    text-shadow: 0 1px 10px rgba(10, 8, 30, 0.45);
+    z-index: 9;
+    animation: cardIn 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card[hidden] {
+    display: none;
+}
+
+.card.closing {
+    animation: cardOut 0.6s ease-in both;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translate(-50%, 24px) scale(0.96); filter: blur(6px); }
+}
+
+@keyframes cardOut {
+    to { opacity: 0; transform: translate(-50%, -16px) scale(0.97); filter: blur(4px); }
+}
+
+.card-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+}
+
+.card-close:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.card-close svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.card-date {
+    font: 600 clamp(44px, 11vw, 68px)/1 "Cormorant Garamond", Georgia, serif;
+    letter-spacing: 2px;
+    background: linear-gradient(100deg, #ffd1e1 10%, #fff4d6 50%, #ffc3a0 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 12px rgba(255, 170, 200, 0.45));
+}
+
+.card-date span {
+    font-size: 0.6em;
+    vertical-align: 0.25em;
+}
+
+.card-sub {
+    margin-top: 8px;
+    font: 600 clamp(11px, 2.8vw, 13px)/1.4 "Cormorant Garamond", Georgia, serif;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.card-to {
+    margin-top: 16px;
+    font: 600 clamp(28px, 7vw, 36px)/1.1 "Dancing Script", cursive;
+    color: #ffe3ec;
+}
+
+.card-msg {
+    margin: 10px auto 0;
+    max-width: 420px;
+    font: italic 500 clamp(17px, 4.4vw, 21px)/1.55 "Cormorant Garamond", Georgia, serif;
+}
+
+/* Lời chúc hiện dần từng chữ */
+.card-msg .w {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(3px);
+    animation: wordIn 0.9s ease-out forwards;
+}
+
+@keyframes wordIn {
+    to { opacity: 1; transform: none; filter: none; }
+}
+
+.card-sign {
+    margin-top: 10px;
+    font-size: 20px;
+    color: #ffb3c8;
+    opacity: 0;
+    animation: wordIn 1s ease-out forwards;
+}
+
+#card-toggle {
+    color: #ffc2d6;
+}
+
+#card-toggle[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card, .card.closing, .card-msg .w, .card-sign {
+        animation-duration: 0.01s;
+        animation-delay: 0s !important;
+    }
+}

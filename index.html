@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#070615">
-    <title>Hoàng hôn</title>
+    <title>Chúc mừng 20/10</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Dancing+Script:wght@600&display=swap&subset=vietnamese">
     <link rel="stylesheet" href="index.css">
 </head>
 
@@ -13,6 +17,19 @@
     <canvas id="scene"></canvas>
     <div class="vignette"></div>
     <div class="fade-in"></div>
+
+    <!-- Thiệp chúc mừng 20/10 -->
+    <section class="card" id="card" hidden aria-label="Thiệp chúc mừng 20/10">
+        <button class="card-close" id="card-close" aria-label="Đóng thiệp">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+        <div class="card-date">20 <span>·</span> 10</div>
+        <div class="card-sub">Chúc mừng ngày Phụ nữ Việt Nam</div>
+        <div class="card-to">Gửi cậu,</div>
+        <p class="card-msg" id="card-msg">Giữa cả một cánh đồng hoa, chẳng bông nào rạng rỡ bằng nụ cười của cậu.
+            Chúc cậu ngày 20/10 thật nhiều niềm vui, luôn xinh đẹp, bình yên và được yêu thương thật nhiều.</p>
+        <div class="card-sign">♡</div>
+    </section>
 
     <div class="controls" id="controls">
         <div class="time-panel" id="time-panel" hidden>
@@ -34,6 +51,12 @@
                 <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
             </div>
         </div>
+
+        <button id="card-toggle" class="round-btn" aria-label="Mở thiệp" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+            </svg>
+        </button>
 
         <button id="clock-toggle" class="round-btn" aria-label="Chỉnh giờ" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -57,8 +80,7 @@
         </button>
     </div>
 
-    <audio id="bg-music" src="obito.mp3" loop preload="auto"></audio>
-
+    <script src="music.js"></script>
     <script src="index.js"></script>
 </body>
 
